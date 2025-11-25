@@ -1,7 +1,9 @@
 using CineReviewP2.Context;
 using CineReviewP2.Models;
+using CineReviewP2.InputModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace CineReviewP2.Controllers
 {
@@ -77,27 +79,34 @@ namespace CineReviewP2.Controllers
 
         // POST: api/notas
         [HttpPost]
-        public  ActionResult<Nota> PostNota(Nota nota)
+        public  ActionResult<Nota> PostNota(NotaInputModel input)
         {
             // Validar se usuário existe
-            var usuarioExiste =  _context.Usuarios.Any(u => u.Id == nota.UsuarioId);
+            var usuarioExiste =  _context.Usuarios.Any(u => u.Id == input.UsuarioId);
             if (!usuarioExiste)
             {
                 return BadRequest(new { message = "Usuário não encontrado" });
             }
 
             // Validar se mídia existe
-            var midiaExiste =  _context.Midias.Any(m => m.Id == nota.MidiaId);
+            var midiaExiste =  _context.Midias.Any(m => m.Id == input.MidiaId);
             if (!midiaExiste)
             {
                 return BadRequest(new { message = "Mídia não encontrada" });
             }
 
             // Validar valor da nota (0-10)
-            if (nota.Valor < 0 || nota.Valor > 10)
+            if (input.Valor < 0 || input.Valor > 10)
             {
                 return BadRequest(new { message = "Valor da nota deve estar entre 0 e 10" });
             }
+
+            var nota = new Nota
+            {
+                Valor = input.Valor,
+                UsuarioId = input.UsuarioId,
+                MidiaId = input.MidiaId
+            };
 
             _context.Notas.Add(nota);
              _context.SaveChanges();
@@ -107,13 +116,8 @@ namespace CineReviewP2.Controllers
 
         // PUT: api/notas/5
         [HttpPut("{id}")]
-        public  IActionResult PutNota(int id, Nota nota)
+        public  IActionResult PutNota(int id, NotaInputModel input)
         {
-            if (id != nota.Id)
-            {
-                return BadRequest(new { message = "ID não corresponde" });
-            }
-
             var notaExistente =  _context.Notas.Find(id);
             if (notaExistente == null)
             {
@@ -121,13 +125,13 @@ namespace CineReviewP2.Controllers
             }
 
             // Validar valor da nota (0-10)
-            if (nota.Valor < 0 || nota.Valor > 10)
+            if (input.Valor < 0 || input.Valor > 10)
             {
                 return BadRequest(new { message = "Valor da nota deve estar entre 0 e 10" });
             }
 
-            notaExistente.Valor = nota.Valor;
-
+            notaExistente.Valor = input.Valor;
+            
             _context.Notas.Update(notaExistente);
              _context.SaveChanges();
 

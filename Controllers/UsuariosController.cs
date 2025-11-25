@@ -1,5 +1,6 @@
 using CineReviewP2.Context;
 using CineReviewP2.Models;
+using CineReviewP2.InputModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -45,12 +46,18 @@ namespace CineReviewP2.Controllers
 
         // POST: api/usuarios
         [HttpPost]
-        public  ActionResult<Usuario> PostUsuario(Usuario usuario)
+        public  ActionResult<Usuario> PostUsuario(UsuarioInputModel input)
         {
-            if (string.IsNullOrWhiteSpace(usuario.Email))
+            if (string.IsNullOrWhiteSpace(input.Email)) // valida se o email não é nulo ou vazio
             {
                 return BadRequest(new { message = "Email é obrigatório" });
             }
+
+            var usuario = new Usuario
+            {
+                Email = input.Email,
+                Nome = input.Nome
+            };
 
             _context.Usuarios.Add(usuario);
              _context.SaveChanges();
@@ -60,21 +67,16 @@ namespace CineReviewP2.Controllers
 
         // PUT: api/usuarios/5
         [HttpPut("{id}")]
-        public  IActionResult PutUsuario(int id, Usuario usuario)
+        public  IActionResult PutUsuario(int id, UsuarioInputModel input)
         {
-            if (id != usuario.Id)
-            {
-                return BadRequest(new { message = "ID não corresponde" });
-            }
-
             var usuarioExistente =  _context.Usuarios.Find(id);
             if (usuarioExistente == null)
             {
                 return NotFound(new { message = "Usuário não encontrado" });
             }
 
-            usuarioExistente.Email = usuario.Email;
-            usuarioExistente.Nome = usuario.Nome;
+            usuarioExistente.Email = input.Email;
+            usuarioExistente.Nome = input.Nome;
 
             _context.Usuarios.Update(usuarioExistente);
              _context.SaveChanges();

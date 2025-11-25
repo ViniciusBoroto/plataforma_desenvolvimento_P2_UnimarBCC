@@ -1,5 +1,6 @@
 using CineReviewP2.Context;
 using CineReviewP2.Models;
+using CineReviewP2.InputModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -45,12 +46,18 @@ namespace CineReviewP2.Controllers
 
         // POST: api/midias/filme
         [HttpPost("filme")]
-        public ActionResult<Filme> PostFilme(Filme filme)
+        public ActionResult<Filme> PostFilme(FilmeInputModel input)
         {
-            if (string.IsNullOrWhiteSpace(filme.Nome))
+            if (string.IsNullOrWhiteSpace(input.Nome))
             {
                 return BadRequest(new { message = "Nome é obrigatório" });
             }
+
+            var filme = new Filme
+            {
+                Nome = input.Nome,
+                DuracaoEmMinutos = input.DuracaoEmMinutos
+            };
 
             _context.Filmes.Add(filme);
             _context.SaveChanges();
@@ -60,12 +67,18 @@ namespace CineReviewP2.Controllers
 
         // POST: api/midias/serie
         [HttpPost("serie")]
-        public ActionResult<Serie> PostSerie(Serie serie)
+        public ActionResult<Serie> PostSerie(SerieInputModel input)
         {
-            if (string.IsNullOrWhiteSpace(serie.Nome))
+            if (string.IsNullOrWhiteSpace(input.Nome))
             {
                 return BadRequest(new { message = "Nome é obrigatório" });
             }
+
+            var serie = new Serie
+            {
+                Nome = input.Nome,
+                Temporadas = input.Temporadas
+            };
 
             _context.Series.Add(serie);
             _context.SaveChanges();
@@ -75,31 +88,26 @@ namespace CineReviewP2.Controllers
 
         // PUT: api/midias/5
         [HttpPut("{id}")]
-        public IActionResult PutMidia(int id, Midia midia)
+        public IActionResult PutMidia(int id, UpdateMidiaInputModel input)
         {
-            if (id != midia.Id)
-            {
-                return BadRequest(new { message = "ID não corresponde" });
-            }
-
             var midiaExistente = _context.Midias.Find(id);
             if (midiaExistente == null)
             {
                 return NotFound(new { message = "Mídia não encontrada" });
             }
 
-            midiaExistente.Nome = midia.Nome;
+            midiaExistente.Nome = input.Nome;
 
             // Se for filme
-            if (midiaExistente is Filme filmeExistente && midia is Filme filmeNovo)
+            if (midiaExistente is Filme filmeExistente && input.DuracaoEmMinutos.HasValue)
             {
-                filmeExistente.DuracaoEmMinutos = filmeNovo.DuracaoEmMinutos;
+                filmeExistente.DuracaoEmMinutos = input.DuracaoEmMinutos.Value;
             }
 
             // Se for série
-            if (midiaExistente is Serie serieExistente && midia is Serie serieNova)
+            if (midiaExistente is Serie serieExistente && input.Temporadas.HasValue)
             {
-                serieExistente.Temporadas = serieNova.Temporadas;
+                serieExistente.Temporadas = input.Temporadas.Value;
             }
 
             _context.Midias.Update(midiaExistente);

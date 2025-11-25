@@ -1,5 +1,6 @@
 using CineReviewP2.Context;
 using CineReviewP2.Models;
+using CineReviewP2.InputModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -77,17 +78,17 @@ namespace CineReviewP2.Controllers
 
         // POST: api/favoritos
         [HttpPost]
-        public ActionResult<Favorito> PostFavorito(Favorito favorito)
+        public ActionResult<Favorito> PostFavorito(FavoritoInputModel input)
         {
             // Validar se usuário existe
-            var usuarioExiste = _context.Usuarios.Any(u => u.Id == favorito.UsuarioId);
+            var usuarioExiste = _context.Usuarios.Any(u => u.Id == input.UsuarioId);
             if (!usuarioExiste)
             {
                 return BadRequest(new { message = "Usuário não encontrado" });
             }
 
             // Validar se mídia existe
-            var midiaExiste = _context.Midias.Any(m => m.Id == favorito.MidiaId);
+            var midiaExiste = _context.Midias.Any(m => m.Id == input.MidiaId);
             if (!midiaExiste)
             {
                 return BadRequest(new { message = "Mídia não encontrada" });
@@ -95,11 +96,17 @@ namespace CineReviewP2.Controllers
 
             // Verificar se já não é favorito
             var jaEhFavorito = _context.Favoritos
-                .Any(f => f.UsuarioId == favorito.UsuarioId && f.MidiaId == favorito.MidiaId);
+                .Any(f => f.UsuarioId == input.UsuarioId && f.MidiaId == input.MidiaId);
             if (jaEhFavorito)
             {
                 return BadRequest(new { message = "Essa mídia já é favorita deste usuário" });
             }
+
+            var favorito = new Favorito
+            {
+                UsuarioId = input.UsuarioId,
+                MidiaId = input.MidiaId
+            };
 
             _context.Favoritos.Add(favorito);
             _context.SaveChanges();
