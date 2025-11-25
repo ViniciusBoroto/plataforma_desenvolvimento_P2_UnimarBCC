@@ -1,6 +1,7 @@
 using CineReviewP2.Context;
 using CineReviewP2.Models;
 using CineReviewP2.InputModels;
+using CineReviewP2.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,21 +20,43 @@ namespace CineReviewP2.Controllers
 
         // GET: api/usuarios
         [HttpGet]
-        public  ActionResult<IEnumerable<Usuario>> GetUsuarios()
+        public ActionResult<IEnumerable<UsuarioDetailViewModel>> GetUsuarios()
         {
-            return  _context.Usuarios
+            var usuarios = _context.Usuarios
                 .Include(u => u.Notas)
+                    .ThenInclude(n => n.Midia)
                 .Include(u => u.Favoritos)
+                    .ThenInclude(f => f.Midia)
                 .ToList();
+
+            return usuarios.Select(u => new UsuarioDetailViewModel
+            {
+                Id = u.Id,
+                Email = u.Email,
+                Nome = u.Nome,
+                Notas = u.Notas.Select(n => new NotaUsuarioViewModel
+                {
+                    Id = n.Id,
+                    Valor = n.Valor,
+                    Midia = new MidiaViewModel { Id = n.Midia.Id, Nome = n.Midia.Nome }
+                }).ToList(),
+                Favoritos = u.Favoritos.Select(f => new FavoritoUsuarioViewModel
+                {
+                    Id = f.Id,
+                    Midia = new MidiaViewModel { Id = f.Midia.Id, Nome = f.Midia.Nome }
+                }).ToList()
+            }).ToList();
         }
 
         // GET: api/usuarios/5
         [HttpGet("{id}")]
-        public  ActionResult<Usuario> GetUsuario(int id)
+        public ActionResult<UsuarioDetailViewModel> GetUsuario(int id)
         {
-            var usuario =  _context.Usuarios
+            var usuario = _context.Usuarios
                 .Include(u => u.Notas)
+                    .ThenInclude(n => n.Midia)
                 .Include(u => u.Favoritos)
+                    .ThenInclude(f => f.Midia)
                 .FirstOrDefault(u => u.Id == id);
 
             if (usuario == null)
@@ -41,7 +64,23 @@ namespace CineReviewP2.Controllers
                 return NotFound(new { message = "Usuário não encontrado" });
             }
 
-            return usuario;
+            return new UsuarioDetailViewModel
+            {
+                Id = usuario.Id,
+                Email = usuario.Email,
+                Nome = usuario.Nome,
+                Notas = usuario.Notas.Select(n => new NotaUsuarioViewModel
+                {
+                    Id = n.Id,
+                    Valor = n.Valor,
+                    Midia = new MidiaViewModel { Id = n.Midia.Id, Nome = n.Midia.Nome }
+                }).ToList(),
+                Favoritos = usuario.Favoritos.Select(f => new FavoritoUsuarioViewModel
+                {
+                    Id = f.Id,
+                    Midia = new MidiaViewModel { Id = f.Midia.Id, Nome = f.Midia.Nome }
+                }).ToList()
+            };
         }
 
         // POST: api/usuarios

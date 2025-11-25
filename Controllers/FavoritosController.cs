@@ -1,6 +1,7 @@
 using CineReviewP2.Context;
 using CineReviewP2.Models;
 using CineReviewP2.InputModels;
+using CineReviewP2.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,17 +20,33 @@ namespace CineReviewP2.Controllers
 
         // GET: api/favoritos
         [HttpGet]
-        public ActionResult<IEnumerable<Favorito>> GetFavoritos()
+        public ActionResult<IEnumerable<FavoritoViewModel>> GetFavoritos()
         {
-            return _context.Favoritos
+            var favoritos = _context.Favoritos
                 .Include(f => f.Usuario)
                 .Include(f => f.Midia)
                 .ToList();
+
+            return favoritos.Select(f => new FavoritoViewModel
+            {
+                Id = f.Id,
+                Usuario = new UsuarioViewModel
+                {
+                    Id = f.Usuario.Id,
+                    Email = f.Usuario.Email,
+                    Nome = f.Usuario.Nome
+                },
+                Midia = new MidiaViewModel
+                {
+                    Id = f.Midia.Id,
+                    Nome = f.Midia.Nome
+                }
+            }).ToList();
         }
 
         // GET: api/favoritos/5
         [HttpGet("{id}")]
-        public ActionResult<Favorito> GetFavorito(int id)
+        public ActionResult<FavoritoViewModel> GetFavorito(int id)
         {
             var favorito = _context.Favoritos
                 .Include(f => f.Usuario)
@@ -41,12 +58,26 @@ namespace CineReviewP2.Controllers
                 return NotFound(new { message = "Favorito não encontrado" });
             }
 
-            return favorito;
+            return new FavoritoViewModel
+            {
+                Id = favorito.Id,
+                Usuario = new UsuarioViewModel
+                {
+                    Id = favorito.Usuario.Id,
+                    Email = favorito.Usuario.Email,
+                    Nome = favorito.Usuario.Nome
+                },
+                Midia = new MidiaViewModel
+                {
+                    Id = favorito.Midia.Id,
+                    Nome = favorito.Midia.Nome
+                }
+            };
         }
 
         // GET: api/favoritos/usuario/5
         [HttpGet("usuario/{usuarioId}")]
-        public ActionResult<IEnumerable<Favorito>> GetFavoritosPorUsuario(int usuarioId)
+        public ActionResult<IEnumerable<FavoritoViewModel>> GetFavoritosPorUsuario(int usuarioId)
         {
             var usuario = _context.Usuarios.Find(usuarioId);
             if (usuario == null)
@@ -54,15 +85,32 @@ namespace CineReviewP2.Controllers
                 return NotFound(new { message = "Usuário não encontrado" });
             }
 
-            return _context.Favoritos
+            var favoritos = _context.Favoritos
                 .Where(f => f.UsuarioId == usuarioId)
                 .Include(f => f.Midia)
+                .Include(f => f.Usuario) // Ensure Usuario is included for mapping
                 .ToList();
+
+            return favoritos.Select(f => new FavoritoViewModel
+            {
+                Id = f.Id,
+                Usuario = new UsuarioViewModel
+                {
+                    Id = f.Usuario.Id,
+                    Email = f.Usuario.Email,
+                    Nome = f.Usuario.Nome
+                },
+                Midia = new MidiaViewModel
+                {
+                    Id = f.Midia.Id,
+                    Nome = f.Midia.Nome
+                }
+            }).ToList();
         }
 
         // GET: api/favoritos/midia/5
         [HttpGet("midia/{midiaId}")]
-        public ActionResult<IEnumerable<Favorito>> GetFavoritosPorMidia(int midiaId)
+        public ActionResult<IEnumerable<FavoritoViewModel>> GetFavoritosPorMidia(int midiaId)
         {
             var midia = _context.Midias.Find(midiaId);
             if (midia == null)
@@ -70,10 +118,27 @@ namespace CineReviewP2.Controllers
                 return NotFound(new { message = "Mídia não encontrada" });
             }
 
-            return _context.Favoritos
+            var favoritos = _context.Favoritos
                 .Where(f => f.MidiaId == midiaId)
                 .Include(f => f.Usuario)
+                .Include(f => f.Midia) // Ensure Midia is included for mapping
                 .ToList();
+
+            return favoritos.Select(f => new FavoritoViewModel
+            {
+                Id = f.Id,
+                Usuario = new UsuarioViewModel
+                {
+                    Id = f.Usuario.Id,
+                    Email = f.Usuario.Email,
+                    Nome = f.Usuario.Nome
+                },
+                Midia = new MidiaViewModel
+                {
+                    Id = f.Midia.Id,
+                    Nome = f.Midia.Nome
+                }
+            }).ToList();
         }
 
         // POST: api/favoritos

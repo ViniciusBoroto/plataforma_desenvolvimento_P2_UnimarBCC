@@ -1,6 +1,7 @@
 using CineReviewP2.Context;
 using CineReviewP2.Models;
 using CineReviewP2.InputModels;
+using CineReviewP2.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,21 +20,26 @@ namespace CineReviewP2.Controllers
 
         // GET: api/midias
         [HttpGet]
-        public ActionResult<IEnumerable<Midia>> GetMidias()
+        public ActionResult<IEnumerable<MidiaViewModel>> GetMidias()
         {
-            return _context.Midias
-                .Include(m => m.Notas)
-                .Include(m => m.Favoritos)
-                .ToList();
+            var midias = _context.Midias.ToList();
+            
+            return midias.Select(m => new MidiaViewModel
+            {
+                Id = m.Id,
+                Nome = m.Nome
+            }).ToList();
         }
 
         // GET: api/midias/5
         [HttpGet("{id}")]
-        public ActionResult<Midia> GetMidia(int id)
+        public ActionResult<MidiaViewModel> GetMidia(int id)
         {
             var midia = _context.Midias
                 .Include(m => m.Notas)
+                    .ThenInclude(n => n.Usuario)
                 .Include(m => m.Favoritos)
+                    .ThenInclude(f => f.Usuario)
                 .FirstOrDefault(m => m.Id == id);
 
             if (midia == null)
@@ -41,7 +47,48 @@ namespace CineReviewP2.Controllers
                 return NotFound(new { message = "Mídia não encontrada" });
             }
 
-            return midia;
+            if (midia is Filme filme)
+            {
+                return new FilmeViewModel
+                {
+                    Id = filme.Id,
+                    Nome = filme.Nome,
+                    DuracaoEmMinutos = filme.DuracaoEmMinutos,
+                    Notas = filme.Notas.Select(n => new NotaSimplesViewModel
+                    {
+                        Id = n.Id,
+                        Valor = n.Valor,
+                        Usuario = new UsuarioViewModel { Id = n.Usuario.Id, Email = n.Usuario.Email, Nome = n.Usuario.Nome }
+                    }).ToList(),
+                    Favoritos = filme.Favoritos.Select(f => new FavoritoSimplesViewModel
+                    {
+                        Id = f.Id,
+                        Usuario = new UsuarioViewModel { Id = f.Usuario.Id, Email = f.Usuario.Email, Nome = f.Usuario.Nome }
+                    }).ToList()
+                };
+            }
+            else if (midia is Serie serie)
+            {
+                return new SerieViewModel
+                {
+                    Id = serie.Id,
+                    Nome = serie.Nome,
+                    Temporadas = serie.Temporadas,
+                    Notas = serie.Notas.Select(n => new NotaSimplesViewModel
+                    {
+                        Id = n.Id,
+                        Valor = n.Valor,
+                        Usuario = new UsuarioViewModel { Id = n.Usuario.Id, Email = n.Usuario.Email, Nome = n.Usuario.Nome }
+                    }).ToList(),
+                    Favoritos = serie.Favoritos.Select(f => new FavoritoSimplesViewModel
+                    {
+                        Id = f.Id,
+                        Usuario = new UsuarioViewModel { Id = f.Usuario.Id, Email = f.Usuario.Email, Nome = f.Usuario.Nome }
+                    }).ToList()
+                };
+            }
+
+            return new MidiaViewModel { Id = midia.Id, Nome = midia.Nome };
         }
 
         // POST: api/midias/filme
@@ -134,22 +181,62 @@ namespace CineReviewP2.Controllers
 
         // GET: api/midias/filmes
         [HttpGet("filmes")]
-        public ActionResult<IEnumerable<Filme>> GetFilmes()
+        public ActionResult<IEnumerable<FilmeViewModel>> GetFilmes()
         {
-            return _context.Filmes
+            var filmes = _context.Filmes
                 .Include(f => f.Notas)
+                    .ThenInclude(n => n.Usuario)
                 .Include(f => f.Favoritos)
+                    .ThenInclude(f => f.Usuario)
                 .ToList();
+
+            return filmes.Select(f => new FilmeViewModel
+            {
+                Id = f.Id,
+                Nome = f.Nome,
+                DuracaoEmMinutos = f.DuracaoEmMinutos,
+                Notas = f.Notas.Select(n => new NotaSimplesViewModel
+                {
+                    Id = n.Id,
+                    Valor = n.Valor,
+                    Usuario = new UsuarioViewModel { Id = n.Usuario.Id, Email = n.Usuario.Email, Nome = n.Usuario.Nome }
+                }).ToList(),
+                Favoritos = f.Favoritos.Select(fav => new FavoritoSimplesViewModel
+                {
+                    Id = fav.Id,
+                    Usuario = new UsuarioViewModel { Id = fav.Usuario.Id, Email = fav.Usuario.Email, Nome = fav.Usuario.Nome }
+                }).ToList()
+            }).ToList();
         }
 
         // GET: api/midias/series
         [HttpGet("series")]
-        public ActionResult<IEnumerable<Serie>> GetSeries()
+        public ActionResult<IEnumerable<SerieViewModel>> GetSeries()
         {
-            return _context.Series
+            var series = _context.Series
                 .Include(s => s.Notas)
+                    .ThenInclude(n => n.Usuario)
                 .Include(s => s.Favoritos)
+                    .ThenInclude(f => f.Usuario)
                 .ToList();
+
+            return series.Select(s => new SerieViewModel
+            {
+                Id = s.Id,
+                Nome = s.Nome,
+                Temporadas = s.Temporadas,
+                Notas = s.Notas.Select(n => new NotaSimplesViewModel
+                {
+                    Id = n.Id,
+                    Valor = n.Valor,
+                    Usuario = new UsuarioViewModel { Id = n.Usuario.Id, Email = n.Usuario.Email, Nome = n.Usuario.Nome }
+                }).ToList(),
+                Favoritos = s.Favoritos.Select(fav => new FavoritoSimplesViewModel
+                {
+                    Id = fav.Id,
+                    Usuario = new UsuarioViewModel { Id = fav.Usuario.Id, Email = fav.Usuario.Email, Nome = fav.Usuario.Nome }
+                }).ToList()
+            }).ToList();
         }
     }
 }
