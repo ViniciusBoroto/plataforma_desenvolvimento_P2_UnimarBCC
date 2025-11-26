@@ -4,6 +4,7 @@ using CineReviewP2.InputModels;
 using CineReviewP2.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel;
 
 namespace CineReviewP2.Controllers
 {
@@ -137,6 +138,41 @@ namespace CineReviewP2.Controllers
              _context.SaveChanges();
 
             return Ok(new { message = "Usuário deletado com sucesso" });
+        }
+        // GET: api/usuarios/ranking/avaliacoes
+        [HttpGet("ranking/avaliacoes")]
+        public ActionResult<IEnumerable<object>> GetRankingAvaliacoes()
+        {
+            var ranking = _context.Usuarios
+                .Select(u => new
+                {
+                    Id = u.Id,
+                    Nome = u.Nome,
+                    Email = u.Email,
+                    TotalAvaliacoes = u.Notas.Count
+                })
+                .OrderByDescending(u => u.TotalAvaliacoes)
+                .ToList();
+
+            return Ok(ranking);
+        }
+
+        // GET: api/usuarios/ranking/favoritos
+        [HttpGet("ranking/favoritos")]
+        public ActionResult<IEnumerable<object>> GetRankingFavoritos()
+        {
+            var ranking = _context.Usuarios
+                .Select(u => new
+                {
+                    Id = u.Id,
+                    Nome = u.Nome,
+                    Email = u.Email,
+                    TotalFavoritos = u.Favoritos.Count
+                })
+                .OrderByDescending(u => u.TotalFavoritos)
+                .ToList();
+
+            return Ok(ranking);
         }
     }
 }
