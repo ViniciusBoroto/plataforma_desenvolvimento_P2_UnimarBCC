@@ -4,6 +4,7 @@ using CineReviewP2.InputModels;
 using CineReviewP2.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace CineReviewP2.Controllers
 {
@@ -12,10 +13,14 @@ namespace CineReviewP2.Controllers
     public class MidiasController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfiguration _configuration;
 
-        public MidiasController(AppDbContext context)
+        public MidiasController(AppDbContext context, IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
             _context = context;
+            _httpClientFactory = httpClientFactory;
+            _configuration = configuration;
         }
 
         // GET: api/midias
@@ -23,7 +28,7 @@ namespace CineReviewP2.Controllers
         public ActionResult<IEnumerable<MidiaViewModel>> GetMidias()
         {
             var midias = _context.Midias.ToList();
-            
+
             return midias.Select(m => new MidiaViewModel
             {
                 Id = m.Id,
@@ -237,6 +242,42 @@ namespace CineReviewP2.Controllers
                     Usuario = new UsuarioViewModel { Id = fav.Usuario.Id, Email = fav.Usuario.Email, Nome = fav.Usuario.Nome }
                 }).ToList()
             }).ToList();
+        }
+
+        // POST: api/midias/importar-tmdb
+        [HttpPost("importar-tmdb")]
+        public async Task<ActionResult<IEnumerable<Filme>>> ImportarFilmesTmdb([FromBody] List<int> tmdbIds)
+        {
+            var client = _httpClientFactory.CreateClient();
+            var filmesImportados = new List<Filme>();
+
+            foreach (var tmdbId in tmdbIds)
+            {
+                try
+                {
+                    var apiKey = _configuration["TmdbApiKey"];
+                    var response = await client.GetAsync($"https://api.themoviedb.org/3/movie/{tmdbId}?api_key={apiKey}&language=pt-BR");
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var json = await response.Content.ReadAsStringAsync();
+                        var tmdbFilme = JsonSerializer.Deserialize<JsonElement>(json);
+
+                        var filme = new Filme
+                        {
+                            Nome = tmdbFilme.GetProperty("title").GetString() ?? "",
+                            DuracaoEmMinutos = tmdbFilme.GetProperty("runtime").GetInt32()
+                        };
+
+                        _context.Filmes.Add(filme);
+                        filmesImportados.Add(filme);
+                    }
+                }
+                catch { }
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(filmesImportados);
         }
     }
 }
